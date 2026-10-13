@@ -1,237 +1,327 @@
-L/**
- * ============================================================
- * CONTROL DE FLETES - VAZQUEZ V2
- * Versión limpia de producción
- * ============================================================
- */
-const VAZQUEZ = {
-  proveedor: 'Vazquez',
-  carpetaEntradaId: '1ohx7G25LIZDM80Qz-63imoV5VxhkzKDI',
-  carpetaOcr: '_OCR_PRUEBA',
-  carpetaProcesados: '_PROCESADOS',
-  limiteEjecucionMs: 270000,
-  limiteCreacionOcrMs: 180000
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<base target="_top">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Conciliación de fletes · Vázquez</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23246bfd'/%3E%3Cpath d='M7 12h18l-5-5M25 20H7l5 5' fill='none' stroke='white' stroke-width='3'/%3E%3C/svg%3E">
+<style>
+:root{color-scheme:light;--ink:#14213d;--muted:#5e6e88;--line:#e4eaf2;--bg:#f5f7fb;--blue:#246bfd;--green:#087442;--amber:#935800;--red:#b62f35}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Arial,sans-serif}
+main{max-width:1580px;margin:auto;padding:32px 28px 48px}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}
+.eyebrow{font-size:12px;letter-spacing:.09em;font-weight:700;color:var(--blue)}
+h1{font-size:30px;letter-spacing:-.8px;line-height:1.2;margin:7px 0 8px}
+h2{font-size:19px;margin:0}
+p{margin:0;color:var(--muted)}
+.updated{font-size:14px}
+button{font:700 14px/1.4 Arial,sans-serif;border:0;border-radius:9px;background:var(--blue);color:white;padding:13px 18px;cursor:pointer;min-height:44px;white-space:nowrap}
+button:disabled{opacity:.55;cursor:not-allowed}
+button.secondary{background:transparent;color:var(--red);border:1px solid var(--line)}
+button.secondary:hover{background:#fff0f0;border-color:var(--red)}
+button:focus-visible,a:focus-visible{outline:3px solid #91baff;outline-offset:3px}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.notice{border:1px solid #d5e3ff;border-radius:10px;background:#edf3ff;color:#315582;padding:12px 15px;margin:25px 0 17px;font-size:14px}
+.notice.error{background:#fff0f0;border-color:#efc0c0;color:#a1242b}
+.notice.success{background:#e7f6ed;border-color:#b8e0c9;color:var(--green)}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.card{border:1px solid var(--line);background:white;border-radius:12px;padding:19px 17px;min-height:139px}
+.label{font-size:14px;color:var(--muted)}
+.amount{font-size:25px;font-weight:700;line-height:1.25;margin:11px 0 8px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.card small{font-size:12px;color:var(--muted);display:block}
+.red{color:var(--red)}
+.amber{color:var(--amber)}
+.green{color:var(--green)}
+.summary{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin:22px 0}
+.pill{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:700}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none;background:currentColor}
+.tolerance{margin-left:auto;font-size:14px;color:var(--muted)}
+.panel{background:white;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.panel-heading{padding:21px 20px 17px;display:flex;justify-content:space-between;gap:15px;align-items:center}
+.panel-heading p{font-size:14px;margin-top:4px}
+.count{font-size:14px;white-space:nowrap;color:var(--muted)}
+.scroll{overflow:auto;max-height:70vh}
+table{width:100%;border-collapse:separate;border-spacing:0;min-width:1310px;font-size:14px}
+th{position:sticky;top:0;z-index:1;text-align:left;background:#f8faff;color:var(--muted);font-weight:600;font-size:12px;padding:13px 12px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:15px 12px;border-bottom:1px solid #edf0f5;vertical-align:top}
+tbody tr:hover{background:#f8faff}
+tbody tr:last-child td{border-bottom:0}
+.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.mono{white-space:nowrap;font-variant-numeric:tabular-nums}
+.reason{min-width:230px;max-width:360px}
+.state{display:inline-flex;align-items:center;gap:7px;border-radius:30px;padding:4px 9px;font-size:12px;font-weight:700;white-space:nowrap}
+.verde{background:#e7f6ed;color:var(--green)}
+.amarillo{background:#fff1d9;color:var(--amber)}
+.rojo{background:#ffe8e8;color:var(--red)}
+.celeste{background:#dff3ff;color:#07658a}
+a{color:#215cca;text-decoration:none}
+a:hover{text-decoration:underline}
+.empty{padding:40px;text-align:center;color:var(--muted)}
+.foot{font-size:12px;color:var(--muted);margin:16px 2px}
+.warnings{padding:14px 18px;background:#fff6e6;color:#815000;border:1px solid #efdaad;border-radius:10px;font-size:14px;margin-bottom:18px}
+.warnings:empty{display:none}
+@media(max-width:1100px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.amount{font-size:23px}}
+@media(max-width:680px){main{padding:22px 16px}.top{flex-direction:column;gap:16px}h1{font-size:26px}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.summary{gap:12px}.tolerance{margin-left:0;width:100%}.panel-heading{align-items:flex-start}.amount{font-size:22px}}
+</style>
+</head>
+<body>
+<main>
+
+<header class="top">
+  <div>
+    <div class="eyebrow">PROVEEDOR · VÁZQUEZ ABEL NICOLÁS</div>
+    <h1>Resumen de conciliación</h1>
+    <p id="updated" class="updated">Leyendo datos…</p>
+  </div>
+  <div class="actions">
+    <button id="refresh" type="button">↻ Actualizar conciliación</button>
+    <button id="limpiar" type="button" class="secondary">🗑 Limpiar datos</button>
+  </div>
+</header>
+
+<div id="notice" class="notice" role="status" aria-live="polite">Actualización manual. Compara el neto facturado con el costo de cada viaje.</div>
+
+<section class="cards" aria-label="Resumen de importes">
+  <article class="card">
+    <div class="label">Facturado por Proveedor</div>
+    <div class="amount" id="facturado">—</div>
+    <small>Todos los conceptos extraídos</small>
+  </article>
+  <article class="card">
+    <div class="label">Facturas Conciliadas</div>
+    <div class="amount green" id="costo">—</div>
+    <small>Facturado por Proveedor − No Conciliadas</small>
+  </article>
+  <article class="card">
+    <div class="label">No Conciliadas</div>
+    <div class="amount red" id="noComparable">—</div>
+    <small>Conceptos que no conciliaron</small>
+  </article>
+  <article class="card">
+    <div class="label">Casos para revisar</div>
+    <div class="amount red" id="revisar">—</div>
+    <small>Incidencias detectadas en la conciliación</small>
+  </article>
+</section>
+
+<section class="summary" aria-label="Estados">
+  <span class="pill green"><i class="dot"></i><span id="greenCount">—</span> conciliados</span>
+  <span class="pill red"><i class="dot"></i><span id="redCount">—</span> incidencias</span>
+  <span class="tolerance">Tolerancia por remito: ± $1,00</span>
+</section>
+
+<div id="warnings" class="warnings"></div>
+
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <h2>Detalle de conciliación</h2>
+      <p>Facturación y viajes, remito por remito.</p>
+    </div>
+    <span id="count" class="count"></span>
+  </div>
+  <div class="scroll" tabindex="0" role="region" aria-label="Tabla de conciliación, desplazamiento horizontal">
+    <table>
+      <thead>
+        <tr>
+          <th>FACTURA</th>
+          <th>REMITO</th>
+          <th>FECHA</th>
+          <th>ZONA FACTURADA</th>
+          <th>ZONA REAL</th>
+          <th class="num">NETO FACTURADO</th>
+          <th class="num">COSTO AREA LOGISTICA</th>
+          <th class="num">DIFERENCIA</th>
+          <th>SEMÁFORO</th>
+          <th>MOTIVO</th>
+        </tr>
+      </thead>
+      <tbody id="rows">
+        <tr><td colspan="10" class="empty">Leyendo conciliación…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<p class="foot">La diferencia se muestra en los casos rojos. Un valor positivo indica facturación mayor al costo. "No calculable" indica que no existe una comparación única y válida.</p>
+
+</main>
+
+<script>
+const $ = function(id) { return document.getElementById(id); };
+
+const money = function(n) {
+  return (n === null || n === undefined)
+    ? '—'
+    : new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
 };
-const _CACHE_TABLAS = {};
-let _LIBRO = null;
 
-function fletesBook_() {
-  if (!_LIBRO) {
-    _LIBRO = SpreadsheetApp.openById('11ECCa2i5DsHK3lfeG5L4_jQEVlR35OZNyekZ4nonqSs');
-  }
-  return _LIBRO;
+const signed = function(n) {
+  return (n > 0 ? '+' : '') + money(n);
+};
+
+const escapeHtml = function(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, function(c) {
+    return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
+  });
+};
+
+let latest = null, busy = false;
+
+function paint(d) {
+  latest = d;
+  const r = d.resumen;
+
+  $('facturado').textContent = money(r.facturado);
+  $('costo').textContent = money(r.conciliadas);
+  $('noComparable').textContent = money(r.noConciliadas);
+  $('revisar').textContent = r.rojos;
+  $('greenCount').textContent = r.verdes;
+  $('redCount').textContent = r.rojos;
+  $('count').textContent = r.total + ' conceptos';
+
+  const stamp = d.actualizado
+    ? new Date(d.actualizado).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })
+    : 'Sin lectura';
+  $('updated').textContent = 'Última lectura: ' + stamp;
+
+  $('notice').className = 'notice';
+  $('notice').textContent = 'Actualización manual. El botón lee nuevos PDF y concilia contra Viajes_Origen.';
+
+  $('warnings').textContent = (d.avisos || [])
+    .map(function(x) { return 'Factura ' + x.factura + ': ' + x.motivo; })
+    .join(' · ') + (r.importesInvalidos ? ' Hay importes inválidos excluidos de los totales.' : '');
+
+  $('rows').innerHTML = d.rows.length
+    ? d.rows.map(function(x) {
+        const invoice = escapeHtml(x.factura || 'Sin factura');
+        const link = /^https:\/\/drive\.google\.com\//.test(x.pdf || '')
+          ? '<a href="' + escapeHtml(x.pdf) + '" target="_blank" rel="noopener noreferrer">' + invoice + '</a>'
+          : invoice;
+        const diff = x.semaforo === 'rojo'
+          ? (x.diferencia == null ? 'No calculable' : signed(x.diferencia))
+          : '—';
+        return '<tr>' +
+          '<td class="mono">' + link + '</td>' +
+          '<td class="mono">' + escapeHtml(x.remito || 'Sin remito') + '</td>' +
+          '<td class="mono">' + escapeHtml(x.fecha || '—') + '</td>' +
+          '<td>' + escapeHtml(x.zonaFacturada || 'No identificada') + '</td>' +
+          '<td>' + escapeHtml(x.zonaReal || 'No identificada') + '</td>' +
+          '<td class="num">' + money(x.neto) + '</td>' +
+          '<td class="num">' + money(x.costo) + '</td>' +
+          '<td class="num ' + (x.semaforo === 'rojo' ? 'red' : '') + '">' + diff + '</td>' +
+          '<td><span class="state ' + x.semaforo + '"><i class="dot"></i>' +
+            ({ verde: 'Conciliado', amarillo: 'Revisar zona', rojo: 'Incidencia', celeste: 'Mov Interno' })[x.semaforo] +
+          '</span></td>' +
+          '<td class="reason">' + escapeHtml(x.motivo) + '</td>' +
+          '</tr>';
+      }).join('')
+    : '<tr><td colspan="10" class="empty">No hay conceptos facturados para conciliar.</td></tr>';
 }
 
-function invalidarCacheFletes_(nombre) {
-  if (nombre) {
-    delete _CACHE_TABLAS[nombre];
-    return;
+function fail(e) {
+  $('notice').className = 'notice error';
+  $('notice').textContent = 'No se pudo completar la conciliación: ' + (e.message || String(e)) + (latest ? ' Se conserva la última lectura visible.' : '');
+  if (!latest) {
+    $('rows').innerHTML = '<tr><td colspan="10" class="empty">Lectura no disponible.</td></tr>';
   }
-  Object.keys(_CACHE_TABLAS).forEach(function(k) {
-    delete _CACHE_TABLAS[k];
+}
+
+function call(name) {
+  return new Promise(function(resolve, reject) {
+    if (!window.google || !window.google.script || !window.google.script.run) {
+      return reject(new Error('La conexión con Google Sheets requiere ejecutar el panel desde Apps Script.'));
+    }
+    google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[name]();
   });
 }
 
-function prepararHojas_(ss) {
-  const encabezados = {
-    Excepciones: ['Fecha', 'Proveedor', 'Archivo', 'PDF', 'Motivo'],
-    Log: ['Fecha', 'Proveedor', 'Archivo', 'ID archivo', 'PDF', 'Original', 'Estado', 'Texto OCR', 'Hash', 'ID OCR']
-  };
-  Object.keys(encabezados).forEach(function(nombre) {
-    const columnas = encabezados[nombre];
-    let hoja = ss.getSheetByName(nombre);
-    if (!hoja) hoja = ss.insertSheet(nombre);
-    if (hoja.getLastRow() === 0) {
-      hoja.getRange(1, 1, 1, columnas.length).setValues([columnas]);
+async function refresh() {
+  if (busy) throw new Error('Ya hay una conciliación en curso.');
+  busy = true;
+  $('refresh').disabled = true;
+  $('limpiar').disabled = true;
+  $('refresh').textContent = 'Actualizando…';
+  $('notice').className = 'notice';
+  $('notice').textContent = 'Procesando facturas y conciliando viajes…';
+  try {
+    const d = await call('actualizarPanelWeb');
+    paint(d);
+    if (d.pendientes) {
+      $('notice').className = 'notice error';
+      $('notice').textContent = 'Quedaron PDFs sin leer por límite de tiempo. Volvé a apretar "Actualizar conciliación" para seguir con el resto.';
     }
-  });
-}
-
-function obtenerOCrearSubcarpeta_(padre, nombre) {
-  const carpetas = padre.getFoldersByName(nombre);
-  return carpetas.hasNext() ? carpetas.next() : padre.createFolder(nombre);
-}
-
-function iniciarPruebaVazquez() {
-  const inicioTotal = Date.now();
-  const ss = fletesBook_();
-  prepararHojas_(ss);
-  const entrada = DriveApp.getFolderById(VAZQUEZ.carpetaEntradaId);
-  const carpetaOcr = obtenerOCrearSubcarpeta_(entrada, VAZQUEZ.carpetaOcr);
-  const hojaLog = ss.getSheetByName('Log');
-  const hojaExc = ss.getSheetByName('Excepciones');
-  const ultima = hojaLog.getLastRow();
-  const datosLog = ultima > 1 ? hojaLog.getRange(2, 1, ultima - 1, 10).getValues() : [];
-  const idsRegistrados = new Set();
-  const nombresRegistrados = new Set();
-  datosLog.forEach(function(r) {
-    if (r[3]) idsRegistrados.add(String(r[3]));
-    if (r[2]) nombresRegistrados.add(String(r[2]).trim().toUpperCase());
-  });
-  const filasNuevas = [];
-  const excepciones = [];
-  let pendientesEntrada = false;
-  let carpetaProc = null;
-  const archivos = entrada.getFilesByType(MimeType.PDF);
-  while (archivos.hasNext()) {
-    if (Date.now() - inicioTotal > VAZQUEZ.limiteCreacionOcrMs) {
-      pendientesEntrada = true;
-      break;
-    }
-    const archivo = archivos.next();
-    const fileId = archivo.getId();
-    const nombreArchivo = archivo.getName().trim().toUpperCase();
-    if (idsRegistrados.has(fileId)) continue;
-    if (nombresRegistrados.has(nombreArchivo)) {
-      excepciones.push([new Date(), VAZQUEZ.proveedor, archivo.getName(), archivo.getUrl(), 'PDF duplicado (nombre de archivo ya registrado)']);
-      try {
-        if (!carpetaProc) carpetaProc = obtenerOCrearSubcarpeta_(entrada, VAZQUEZ.carpetaProcesados);
-        archivo.moveTo(carpetaProc);
-      } catch (e) {}
-      continue;
-    }
-    try {
-      const blob = archivo.getBlob();
-      const documentoOcr = Drive.Files.create({
-        name: 'OCR - ' + archivo.getName(),
-        mimeType: 'application/vnd.google-apps.document',
-        parents: [carpetaOcr.getId()]
-      }, blob, { fields: 'id', ocrLanguage: 'es' });
-      filasNuevas.push([new Date(), VAZQUEZ.proveedor, archivo.getName(), fileId, archivo.getUrl(), '', 'OCR_PENDIENTE', '', '', documentoOcr.id]);
-      idsRegistrados.add(fileId);
-      nombresRegistrados.add(nombreArchivo);
-    } catch (error) {
-      excepciones.push([new Date(), VAZQUEZ.proveedor, archivo.getName(), archivo.getUrl(), 'Error creando OCR: ' + (error.message || error)]);
-    }
+    return { resumen: d.resumen, actualizado: d.actualizado };
+  } catch (e) {
+    fail(e);
+    throw e;
+  } finally {
+    busy = false;
+    $('refresh').disabled = false;
+    $('limpiar').disabled = false;
+    $('refresh').textContent = '↻ Actualizar conciliación';
   }
-  if (filasNuevas.length) hojaLog.getRange(hojaLog.getLastRow() + 1, 1, filasNuevas.length, 10).setValues(filasNuevas);
-  if (excepciones.length) hojaExc.getRange(hojaExc.getLastRow() + 1, 1, excepciones.length, 5).setValues(excepciones);
-  const resultadoLectura = procesarOcrPendientes_(inicioTotal, VAZQUEZ.limiteEjecucionMs);
-  return {
-    pendientes: pendientesEntrada || resultadoLectura.pendientes > 0,
-    nuevos: filasNuevas.length,
-    completados: resultadoLectura.completados,
-    pendientesOcr: resultadoLectura.pendientes
-  };
 }
 
-function procesarOcrPendientes_(inicioTotal, limiteMs) {
-  const hoja = fletesBook_().getSheetByName('Log');
-  if (!hoja || hoja.getLastRow() < 2) return { completados: 0, pendientes: 0 };
-  const ultima = hoja.getLastRow();
-  const datos = hoja.getRange(2, 1, ultima - 1, 10).getValues();
-  let completados = 0;
-  let pendientes = 0;
-  for (let i = 0; i < datos.length; i++) {
-    if (Date.now() - inicioTotal > limiteMs) {
-      for (let j = i; j < datos.length; j++) if (datos[j][6] === 'OCR_PENDIENTE') pendientes++;
-      break;
+async function limpiarDatos() {
+  if (busy) return;
+  if (!confirm('¿Borrar TODOS los datos de las hojas del Sheet?\n\nEsto limpia: Log, Facturas_Vazquez, Remitos_Vazquez, Cruce_Vazquez y Excepciones. También mueve los PDFs de la carpeta a _PROCESADOS.\n\nEsta acción no se puede deshacer.')) return;
+  if (!confirm('¿Estás SEGURO?\n\nConfirmá una vez más.')) return;
+
+  busy = true;
+  $('limpiar').disabled = true;
+  $('refresh').disabled = true;
+  $('limpiar').textContent = 'Limpiando…';
+  $('notice').className = 'notice';
+  $('notice').textContent = 'Limpiando datos...';
+
+  try {
+    const res = await call('limpiarDatosViejos');
+    if (res && res.ok) {
+      // ✅ Limpiar el panel también
+      latest = null;
+      $('facturado').textContent = '—';
+      $('costo').textContent = '—';
+      $('noComparable').textContent = '—';
+      $('revisar').textContent = '—';
+      $('greenCount').textContent = '—';
+      $('redCount').textContent = '—';
+      $('count').textContent = '';
+      $('warnings').textContent = '';
+      $('updated').textContent = 'Sin lectura';
+      $('rows').innerHTML = '<tr><td colspan="10" class="empty">Sin datos. Cargá PDFs y ejecutá "Actualizar conciliación".</td></tr>';
+
+      $('notice').className = 'notice success';
+      $('notice').textContent = '✓ Datos limpiados correctamente. PDFs movidos: ' + (res.pdfsMovidos || 0) + '.';
+    } else {
+      $('notice').className = 'notice';
+      $('notice').textContent = 'Limpieza ejecutada.';
     }
-    const fila = datos[i];
-    if (fila[6] !== 'OCR_PENDIENTE') continue;
-    const documentoId = String(fila[9] || '');
-    if (!documentoId) { fila[6] = 'ERROR_OCR'; continue; }
-    try {
-      const texto = DocumentApp.openById(documentoId).getBody().getText();
-      if (!texto || !texto.trim()) { pendientes++; continue; }
-      const esOriginal = /\bORIGINAL\b/.test(normalizar_(texto));
-      fila[5] = esOriginal ? 'SI' : 'NO';
-      fila[6] = 'OK';
-      fila[7] = texto;
-      completados++;
-    } catch (e) { pendientes++; }
+  } catch (e) {
+    $('notice').className = 'notice error';
+    $('notice').textContent = 'Error al limpiar: ' + (e.message || String(e));
+  } finally {
+    busy = false;
+    $('limpiar').disabled = false;
+    $('refresh').disabled = false;
+    $('limpiar').textContent = '🗑 Limpiar datos';
   }
-  hoja.getRange(2, 1, datos.length, 10).setValues(datos);
-  return { completados: completados, pendientes: pendientes };
 }
 
-function extraerVazquezDesdeLog() {
-  const ss = fletesBook_();
-  const log = ss.getSheetByName('Log');
-  if (!log) throw new Error('No existe la pestaña Log.');
-  const ultima = log.getLastRow();
-  const filas = ultima > 1 ? log.getRange(2, 1, ultima - 1, 10).getValues() : [];
-  const facturas = [], remitos = [], archivosVistos = new Set();
-  filas.forEach(function(fila) {
-    const id = String(fila[3] || fila[4] || '');
-    if (id && archivosVistos.has(id)) return;
-    if (id) archivosVistos.add(id);
-    const proveedor = fila[1], archivo = fila[2], pdfUrl = fila[4], esOriginal = fila[5], estadoOcr = fila[6], texto = String(fila[7] || '');
-    if (proveedor !== VAZQUEZ.proveedor || estadoOcr !== 'OK' || esOriginal !== 'SI' || !texto) return;
-    const original = soloOriginal_(texto);
-    const factura = obtenerCoincidencia_(original, /Punto\s+de\s+Venta:\s*(\d+)\s*Comp\.?\s*Nro:?\s*(\d+)/i, function(m) { return m[1] + '-' + m[2]; });
-    const fechaTexto = obtenerCoincidencia_(original, /Fecha\s+de\s+Emisión:\s*(\d{2}\/\d{2}\/\d{4})/i, function(m) { return m[1]; });
-    const fechaFactura = fechaTexto ? fechaArgentina_(fechaTexto) : '';
-    const totalTexto = obtenerCoincidencia_(original, /Importe\s+Total:\s*\$\s*([\d.]+,\d{2})/i, function(m) { return m[1]; });
-    const netoTexto = obtenerCoincidencia_(original, /Importe\s+Neto\s+Gravado:\s*\$\s*([\d.]+,\d{2})/i, function(m) { return m[1]; });
-    const lineas = extraerLineasVazquez_(original);
-    const estado = !factura || !fechaFactura || !totalTexto ? 'REVISAR: faltan datos de factura' : lineas.length === 0 ? 'REVISAR: factura sin remitos' : 'OK';
-    facturas.push([archivo, pdfUrl, factura || '', fechaFactura || '', totalTexto ? montoArgentino_(totalTexto) : '', lineas.length, estado, netoTexto ? montoArgentino_(netoTexto) : '']);
-    lineas.forEach(function(linea) {
-      remitos.push([factura || '', fechaServicio_(linea.fecha, fechaFactura), linea.remito, linea.descripcion, montoArgentino_(linea.neto), montoArgentino_(linea.totalConIva), pdfUrl, !linea.remito || linea.remito.indexOf('/') !== -1 ? 'Referencia compuesta: revisar si corresponde separar' : 'OK']);
-    });
+$('refresh').addEventListener('click', function() { refresh().catch(function(){}); });
+$('limpiar').addEventListener('click', function() { limpiarDatos().catch(function(){}); });
+
+$('refresh').disabled = true;
+$('limpiar').disabled = true;
+call('obtenerDatosPanelWeb')
+  .then(paint)
+  .catch(fail)
+  .then(function() {
+    $('refresh').disabled = false;
+    $('limpiar').disabled = false;
   });
-  escribirSalida_(ss, 'Facturas_Vazquez', ['Archivo','PDF','Factura','Fecha emisión','Importe total','Remitos detectados','Estado','Neto gravado'], facturas);
-  escribirSalida_(ss, 'Remitos_Vazquez', ['Factura','Fecha servicio','Remito','Descripción','Neto','Total c/IVA','PDF','Estado'], remitos);
-}
-
-function extraerServiciosVazquez_(texto) {
-  const bloques = String(texto).split(/Subtotal\s+c\/IVA/i).slice(1);
-  if (!bloques.length) return [];
-  const detalle = bloques.map(function(b) { return b.split(/Importe\s+Otros\s+Tributos|Subtotal\s*:/i)[0].replace(/^\s*TRANSPORTE:\s*[\d.,]+\s*/i, ''); }).join('\n');
-  const servicios = [];
-  const patron = /([\s\S]*?)1,00\s+unidades\s+([\d.]+,\d{2})\s+0,00\s+([\d.]+,\d{2})\s+\d+(?:[.,]\d+)?%\s+([\d.]+,\d{2})/gi;
-  let m;
-  while ((m = patron.exec(detalle)) !== null) {
-    let descripcion = m[1].replace(/\s+/g, ' ').trim();
-    const fecha = descripcion.match(/^(\d{2}\/\d{2})\s+/);
-    if (fecha) descripcion = descripcion.slice(fecha[0].length);
-    servicios.push({ fecha: fecha ? fecha[1] : '', descripcion: descripcion, neto: m[3], totalConIva: m[4] });
-  }
-  return servicios;
-}
-function extraerLineasVazquez_(texto) { return extraerServiciosVazquez_(texto).map(function(s) { return { fecha:s.fecha, descripcion:s.descripcion, remito:extraerRemito_(s.descripcion), neto:s.neto, totalConIva:s.totalConIva }; }); }
-function soloOriginal_(texto) { const inicio=texto.search(/\bORIGINAL\b/i); if(inicio<0)return texto; const resto=texto.slice(inicio); const fin=resto.search(/\bDUPLICADO\b/i); return fin>=0?resto.slice(0,fin):resto; }
-function extraerRemito_(descripcion) { const match=descripcion.match(/\bR\s*\d{3,6}(?:\s*\/\s*\d{1,6})?/i); return match?match[0].replace(/\s+/g,''):''; }
-function obtenerCoincidencia_(texto,patron,transformar){const match=texto.match(patron);return match?transformar(match):'';}
-function fechaArgentina_(texto){const p=texto.split('/').map(Number);return new Date(p[2],p[1]-1,p[0]);}
-function fechaServicio_(texto,fechaFactura){if(!texto||!fechaFactura)return '';const p=texto.split('/').map(Number);const dia=p[0],mes=p[1];let anio=fechaFactura.getFullYear();if(mes>fechaFactura.getMonth()+1)anio--;return new Date(anio,mes-1,dia);}
-function montoArgentino_(texto){return Number(String(texto).replace(/\./g,'').replace(',','.'));}
-function normalizar_(texto){return String(texto==null?'':texto).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();}
-
-function escribirSalida_(ss,nombre,encabezados,filas){let hoja=ss.getSheetByName(nombre);if(!hoja)hoja=ss.insertSheet(nombre);hoja.clearContents();hoja.getRange(1,1,1,encabezados.length).setValues([encabezados]);if(filas.length)hoja.getRange(2,1,filas.length,encabezados.length).setValues(filas);hoja.setFrozenRows(1);invalidarCacheFletes_(nombre);}
-
-var FletesEngine=(function(){
-function text(v){return String(v==null?'':v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim();}
-function remito(v){var s=text(v).replace(/^R\s*/,'');return /^\d+$/.test(s)?s.replace(/^0+(?=\d)/,''):null;}
-function amount(v){if(typeof v==='number')return Number.isFinite(v)?Math.round(v*100):null;var s=String(v==null?'':v).trim().replace(/^\$\s*/,'');if(!s)return null;if(/^-?\d{1,3}(\.\d{3})+(,\d{1,2})?$/.test(s))s=s.replace(/\./g,'').replace(',','.');else if(/^-?\d+(,\d{1,2})$/.test(s))s=s.replace(',','.');else if(!/^-?\d+(\.\d{1,2})?$/.test(s))return null;var n=Number(s);return Number.isFinite(n)?Math.round(n*100):null;}
-function zone(v){var s=text(v).replace(/^ZONA\s+/,'').replace(/^Z\s*\/\s*/,'');return s&&!/VERIFICAR|REVISAR|PENDIENTE|^#|SIN ZONA/.test(s)?s:'';}
-function billedZone(v){var m=text(v).match(/\bZ(?:ONA\s+|\s*\/\s*)(LA PLATA|NORTE|SUR|OESTE|CABA|GILES|LUJAN)\b/);return m?m[1]:'';}
-function reconcile(input){var remitos=input.remitos||[],viajes=input.viajes||[],facturas=input.facturas||[],byTrip={},byGroup={},remitoAGrupo={},byBill={},byInvoice={},controls={},warnings=[];
-viajes.forEach(function(v){var k=remito(v.remito);if(k)(byTrip[k]||(byTrip[k]=[])).push(v);if(v.grupo){(byGroup[v.grupo]||(byGroup[v.grupo]=[])).push(v);if(k)remitoAGrupo[k]=v.grupo;}});
-var cacheViajesRemito={};function viajesDeRemito(k){if(!k)return[];if(Object.prototype.hasOwnProperty.call(cacheViajesRemito,k))return cacheViajesRemito[k];var directas=byTrip[k]||[],porFila={};directas.forEach(function(v){porFila[v.fila]=v;});directas.forEach(function(v){(byGroup[v.grupo]||[]).forEach(function(w){porFila[w.fila]=w;});});return cacheViajesRemito[k]=Object.keys(porFila).map(function(f){return porFila[f];});}
-remitos.forEach(function(r){var k=remito(r.remito);if(k)(byBill[k]||(byBill[k]=[])).push(r);var f=text(r.factura);(byInvoice[f]||(byInvoice[f]=[])).push(r);});
-var remitosPorGrupo={};remitos.forEach(function(r){var k=remito(r.remito),g=k?remitoAGrupo[k]:null;if(g)(remitosPorGrupo[g]||(remitosPorGrupo[g]=[])).push(k);});
-facturas.forEach(function(f){var k=text(f.factura),reasons=controls[k]||(controls[k]=[]);if(f.problema)reasons.push(f.problema);var details=byInvoice[k]||[],expected=amount(f.neto),actual=0,invalid=false;details.forEach(function(r){var n=amount(r.neto);if(n===null)invalid=true;else actual+=n;});if(!details.length)reasons.push('Factura sin detalle extraído');if(expected===null)reasons.push('No se pudo verificar el neto total de la factura');else if(invalid||Math.abs(actual-expected)>1)reasons.push('El detalle extraído no coincide con el neto total de la factura');if(reasons.length)warnings.push({factura:f.factura,motivo:reasons.join('; ')});});
-var procesadosSet={};(input.procesados||[]).forEach(function(x){var pk=remito(x.remito);if(pk)procesadosSet[pk]=true;});
-var rows=remitos.map(function(r,i){var k=remito(r.remito),grupo=k?remitoAGrupo[k]:null,matches=viajesDeRemito(k),v=matches.length?matches[0]:null,net=amount(r.neto),cost=null;if(matches.length){var sumaCosto=0,costosValidos=true;matches.forEach(function(x){var c=amount(x.costo);if(c===null)costosValidos=false;else sumaCosto+=c;});if(costosValidos)cost=sumaCosto;}var reasons=[],zf=zone(r.zonaFacturada)||billedZone(r.descripcion),zr='';if(matches.length&&matches.every(function(x){return!!zone(x.zona);}))zr=Array.from(new Set(matches.map(function(x){return zone(x.zona);}))).join(' / ');var remitosGrupo=grupo?Array.from(new Set(remitosPorGrupo[grupo]||[])):[],grupoCompartido=remitosGrupo.length>1;
-if(!text(r.factura))reasons.push('Número de factura faltante');if(!text(r.remito))reasons.push('Concepto sin número de remito'+(r.descripcion?': '+r.descripcion:''));else if(!k)reasons.push('Referencia de remito compuesta o inválida; requiere identificación manual');if(k&&byBill[k]&&byBill[k].length>1)reasons.push('Hay más de un remito facturado con este número ('+byBill[k].length+' registros)');if(k&&!matches.length)reasons.push('Remito sin viaje en Viajes_Origen');if(grupoCompartido)reasons.push('El pedido combinado (Orden) también fue facturado bajo otro remito ('+remitosGrupo.filter(function(x){return x!==k;}).join(', ')+'); revisar para no duplicar el costo');var processed=!!(k&&procesadosSet[k])||/^(PROCESADO|PAGADO|YA PROCESADO)$/.test(text(r.estado));if(processed)reasons.push('Este remito ya fue procesado');if(net===null)reasons.push('Neto faltante o inválido');if(v&&cost===null)reasons.push('COSTO faltante o inválido');if(r.problema)reasons.push(r.problema);(controls[text(r.factura)]||[]).forEach(function(s){reasons.push(s);});var comparable=!!(k&&byBill[k]&&byBill[k].length===1&&v&&net!==null&&cost!==null&&!processed&&!grupoCompartido),diff=comparable?net-cost:null;if(diff!==null&&Math.abs(diff)>100)reasons.push('Diferencia de importe superior a $1');if(diff!==null&&Math.abs(diff)>100&&zf&&zr&&zf!==zr)reasons.push('La zona facturada también difiere de la real');var interno=/\bMOV(?:IMIENTOS?)?\.?\s+INTERNOS?\b/.test(text(r.descripcion))||zone(r.zonaFacturada)==='MOV INTERNO';if(v&&!interno&&!zf)reasons.push('Zona facturada no identificable');if(v&&!interno&&!zr)reasons.push('Zona real faltante o pendiente de verificar');var color=reasons.length?'rojo':'verde',motivo=reasons.length?reasons.join('; '):zf!==zr?'Neto y costo concilian; zonas diferentes':'Neto y costo concilian; zona coincidente';var remitosEnMatches=Array.from(new Set(matches.map(function(x){return remito(x.remito);}).filter(Boolean)));if(matches.length>1)motivo+='; suma de '+matches.length+' líneas de costo de Logística';if(remitosEnMatches.length>1)motivo+='; Orden combinada con remito(s) '+remitosEnMatches.filter(function(x){return x!==k;}).join(', ');if(interno||(!text(r.remito)&&!zf)){zf='Mov Interno';color='verde';motivo='Mov Interno';}return{id:i+1,factura:String(r.factura||''),remito:String(r.remito||''),fecha:r.fecha||'',zonaFacturada:zf,zonaReal:zr,neto:net===null?null:net/100,costo:cost===null?null:cost/100,diferencia:diff===null?null:diff/100,semaforo:color,motivo:motivo,pdf:r.pdf||'',descripcion:r.descripcion||'',filaRemito:r.fila||i+2,filaViaje:matches.length>1?matches.map(function(x){return x.fila;}).join(', '):v?v.fila:null};});
-var resumen={facturado:0,costoComparable:0,netoComparable:0,diferenciaComparable:0,noComparable:0,conciliadas:0,noConciliadas:0,verdes:0,amarillos:0,rojos:0,celestes:0,total:rows.length,importesInvalidos:0};rows.forEach(function(r){if(r.neto===null)resumen.importesInvalidos++;else resumen.facturado+=r.neto;if(r.semaforo==='verde'){resumen.verdes++;resumen.conciliadas+=r.neto||0;}else if(r.semaforo==='rojo'){resumen.rojos++;resumen.noConciliadas+=r.neto||0;}else if(r.semaforo==='amarillo')resumen.amarillos++;else if(r.semaforo==='celeste')resumen.celestes++;if(r.diferencia!==null){resumen.costoComparable+=r.costo||0;resumen.netoComparable+=r.neto||0;resumen.diferenciaComparable+=r.diferencia||0;}else resumen.noComparable+=r.neto||0;});return{actualizado:input.actualizado||null,rows:rows,avisos:warnings,resumen:resumen};}
-return{reconcile:reconcile,amount:amount,remito:remito,billedZone:billedZone};})();
-
-function tablaFletes_(nombre,requeridas){if(Object.prototype.hasOwnProperty.call(_CACHE_TABLAS,nombre))return _CACHE_TABLAS[nombre];const hoja=fletesBook_().getSheetByName(nombre);if(!hoja){if(requeridas)throw new Error('Falta la hoja '+nombre);return [];}const lastRow=hoja.getLastRow(),lastCol=hoja.getLastColumn();if(lastRow<1||lastCol<1){_CACHE_TABLAS[nombre]=[];return [];}const valores=hoja.getRange(1,1,lastRow,lastCol).getValues(),claves=valores[0].map(function(v){return normalizar_(v).trim();});(requeridas||[]).forEach(function(k){if(claves.indexOf(k)===-1)throw new Error('Falta la columna '+k+' en '+nombre);});const resultado=[];for(let i=1;i<valores.length;i++){const fila=valores[i];let tieneDatos=false;for(let j=0;j<fila.length;j++){if(fila[j]!==''&&fila[j]!==null){tieneDatos=true;break;}}if(!tieneDatos)continue;const o={fila:i+1};for(let j=0;j<claves.length;j++)o[claves[j]]=fila[j];resultado.push(o);}_CACHE_TABLAS[nombre]=resultado;return resultado;}
-function fechaFletes_(v){return v instanceof Date?Utilities.formatDate(v,'America/Argentina/Buenos_Aires','dd/MM/yyyy'):String(v||'');}
-
-function crearGruposOrden_(){const hoja=fletesBook_().getSheetByName('Viajes_Origen');if(!hoja)throw new Error('No existe Viajes_Origen');const ultimaFila=hoja.getLastRow(),ultimaCol=hoja.getLastColumn();if(ultimaFila<2)return;const headers=hoja.getRange(1,1,1,ultimaCol).getValues()[0];let columnaGrupo=headers.findIndex(function(h){return normalizar_(h).trim()==='GRUPO_ORDEN';})+1;if(!columnaGrupo){columnaGrupo=ultimaCol+1;hoja.getRange(1,columnaGrupo).setValue('GRUPO_ORDEN');}const grupos=Array.from({length:ultimaFila-1},function(_,i){return['fila_'+(i+2)];});const combinadas=hoja.getRange(2,1,ultimaFila-1,1).getMergedRanges();combinadas.forEach(function(rango){const desde=rango.getRow(),hasta=desde+rango.getNumRows()-1;if(hasta>desde){const grupo='orden_'+desde;for(let fila=desde;fila<=hasta;fila++)grupos[fila-2][0]=grupo;}});hoja.getRange(2,columnaGrupo,grupos.length,1).setValues(grupos);invalidarCacheFletes_('Viajes_Origen');}
-
-function entradasFletes_(){const tablaRemitos=tablaFletes_('Remitos_Vazquez',['FACTURA','REMITO','NETO']);const remitos=tablaRemitos.map(function(r){return{fila:r.fila,factura:r.FACTURA,remito:r.REMITO,fecha:fechaFletes_(r['FECHA SERVICIO']),descripcion:r.DESCRIPCION,neto:r.NETO,pdf:r.PDF,estado:r.ESTADO};});const tablaViajes=tablaFletes_('Viajes_Origen',['REMITO','COSTO','ZONA','GRUPO_ORDEN']);const viajes=tablaViajes.map(function(r){return{fila:r.fila,remito:r.REMITO,costo:r.COSTO,zona:r.ZONA,grupo:r.GRUPO_ORDEN||('fila_'+r.fila)};});const facturas=tablaFletes_('Facturas_Vazquez').map(function(r){return{factura:r.FACTURA,neto:r['NETO GRAVADO']};});const hojaProcesados=fletesBook_().getSheetByName('Procesados_Vazquez');let procesados=[];if(hojaProcesados&&hojaProcesados.getLastRow()>1){procesados=tablaFletes_('Procesados_Vazquez').filter(function(r){return /^(PROCESADO|PAGADO)$/.test(normalizar_(r.ESTADO));}).map(function(r){return{remito:r.REMITO};});}return{remitos:remitos,viajes:viajes,facturas:facturas,procesados:procesados,actualizado:new Date().toISOString()};}
-
-function pdfsLeidosOk_(){const hoja=fletesBook_().getSheetByName('Log'),ultima=hoja?hoja.getLastRow():0,leidos=new Set();if(ultima<2)return leidos;hoja.getRange(2,5,ultima-1,3).getValues().forEach(function(r){if(r[2]==='OK')leidos.add(String(r[0]));});return leidos;}
-function doGet(){return HtmlService.createHtmlOutputFromFile('PanelWeb').setTitle('Conciliación de fletes · Vázquez').addMetaTag('viewport','width=device-width, initial-scale=1');}
-function obtenerDatosPanelWeb(){invalidarCacheFletes_();const d=FletesEngine.reconcile(entradasFletes_()),leidos=pdfsLeidosOk_();tablaFletes_('Excepciones').filter(function(r){return!leidos.has(String(r.PDF));}).forEach(function(r){d.avisos.push({factura:r.ARCHIVO||'',motivo:r.MOTIVO||'Error de lectura de PDF'});});d.modo='vivo';d.ultimaEjecucion=PropertiesService.getScriptProperties().getProperty('fletes_ultima_ejecucion');return d;}
-
-function guardarCruceFletes_(d){escribirSalida_(fletesBook_(),'Cruce_Vazquez',['Factura','Remito','Fecha','Zona facturada','Zona real','Neto','Costo','Diferencia','Semáforo','Motivo','PDF','Fila remito','Fila viaje'],d.rows.map(function(r){return[r.factura,r.remito,r.fecha,r.zonaFacturada,r.zonaReal,r.neto===null?'':r.neto,r.costo===null?'':r.costo,r.diferencia===null?'':r.diferencia,r.semaforo.toUpperCase(),r.motivo,r.pdf,r.filaRemito,r.filaViaje||''];}));const h=fletesBook_().getSheetByName('Cruce_Vazquez');h.setFrozenRows(1);h.getRange(1,1,1,13).setBackground('#14213d').setFontColor('#ffffff').setFontWeight('bold');if(d.rows.length){h.getRange(2,6,d.rows.length,3).setNumberFormat('$ #,##0.00');const colores={verde:'#e7f6ed',amarillo:'#fff1d9',rojo:'#ffe8e8',celeste:'#dff3ff'};h.getRange(2,9,d.rows.length,1).setBackgrounds(d.rows.map(function(r){return[colores[r.semaforo]||'#ffffff'];}));}}
-function cruzarVazquezConViajes(){const lock=LockService.getScriptLock();if(!lock.tryLock(1000))throw new Error('Ya hay una conciliación en curso. Esperá a que termine.');try{invalidarCacheFletes_();const d=obtenerDatosPanelWeb();guardarCruceFletes_(d);return d;}finally{lock.releaseLock();}}
-function actualizarPanelWeb(){const lock=LockService.getScriptLock();if(!lock.tryLock(1000))throw new Error('Ya hay una conciliación en curso.');try{const resultadoOcr=iniciarPruebaVazquez();extraerVazquezDesdeLog();invalidarCacheFletes_();const d=obtenerDatosPanelWeb();if(!d.rows.length&&!resultadoOcr.pendientes)throw new Error('No se generaron conceptos. Revisá Log y Excepciones.');guardarCruceFletes_(d);PropertiesService.getScriptProperties().setProperty('fletes_ultima_ejecucion',d.actualizado);d.ultimaEjecucion=d.actualizado;d.modo='vivo';d.pendientes=resultadoOcr.pendientes;d.ocr=resultadoOcr;return d;}finally{lock.releaseLock();}}
-
-function limpiarDatosViejos(){const lock=LockService.getScriptLock();if(!lock.tryLock(1000))throw new Error('Hay una conciliación en curso. Esperá a que termine.');try{const ss=fletesBook_(),inicio=Date.now(),LIMITE_MS=240000,entrada=DriveApp.getFolderById(VAZQUEZ.carpetaEntradaId),carpetaProc=obtenerOCrearSubcarpeta_(entrada,VAZQUEZ.carpetaProcesados),archivos=entrada.getFilesByType(MimeType.PDF);let movidos=0;while(archivos.hasNext()){if(Date.now()-inicio>LIMITE_MS)break;const archivo=archivos.next();try{archivo.moveTo(carpetaProc);movidos++;}catch(e){}}['Log','Facturas_Vazquez','Remitos_Vazquez','Cruce_Vazquez','Excepciones'].forEach(function(nombre){const hoja=ss.getSheetByName(nombre);if(hoja)hoja.clearContents();});invalidarCacheFletes_();prepararHojas_(ss);escribirSalida_(ss,'Facturas_Vazquez',['Archivo','PDF','Factura','Fecha emisión','Importe total','Remitos detectados','Estado','Neto gravado'],[]);escribirSalida_(ss,'Remitos_Vazquez',['Factura','Fecha servicio','Remito','Descripción','Neto','Total c/IVA','PDF','Estado'],[]);escribirSalida_(ss,'Cruce_Vazquez',['Factura','Remito','Fecha','Zona facturada','Zona real','Neto','Costo','Diferencia','Semáforo','Motivo','PDF','Fila remito','Fila viaje'],[]);PropertiesService.getScriptProperties().deleteProperty('fletes_ultima_ejecucion');return{ok:true,pdfsMovidos:movidos};}finally{lock.releaseLock();}}
+</script>
+</body>
+</html>
